@@ -254,7 +254,7 @@ with tab2:
                         "text/csv"
                     )
                     
-            else:
+            finally:
                 Exception as e:
                 st.error(f"Error processing file: {str(e)}")
 except:
