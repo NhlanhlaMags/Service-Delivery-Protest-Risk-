@@ -6,6 +6,13 @@ import pandas as pd
 from io import StringIO
 import os
 from pathlib import Path # Import Path
+from sklearn.utils import _set_output
+
+# Load the model
+model = joblib.load("protest_risk_model.pkl")
+
+# Re-save with `compat_pickle` for backward compatibility
+joblib.dump(model, "protest_risk_model_compat.pkl", compat_pickle=True)
 
 # Configuration
 st.set_page_config(
@@ -23,31 +30,9 @@ PROVINCES = [
 
 @st.cache_resource
 def load_model():
-    try:
-        # Get script directory
-        current_dir = Path(__file__).parent
-
-        # Use correct relative path
-        model_path = current_dir / "protest_risk_model.pkl"
-
-        # Debug output
-        st.write(f"Loading model from: {model_path}")
-        st.write(f"File exists: {os.path.exists(model_path)}")
-
-        if not os.path.exists(model_path):
-            st.error(f"❌ Model file not found at: {model_path}")
-            return None
-
-        # Corrected syntax here
-        with open(model_path, 'rb') as f:
-            model = joblib.load(f)
-            st.success("✅ Model loaded successfully!")
-            return {"model": model, "preprocessor": None} # Return model in a dictionary
-
-    except Exception as e:
-        st.error(f"Model loading failed: {str(e)}")
-        return None
-
+   model = joblib.load("protest_risk_model.pkl")
+# Re-save with `compat_pickle` for backward compatibility
+joblib.dump(model, "protest_risk_model_compat.pkl", compat_pickle=True)
 # Helper functions
 def validate_inputs(df):
     #Ensure data quality before prediction
