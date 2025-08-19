@@ -241,11 +241,9 @@ st.subheader("Batch Prediction via CSV")
                     predictions = model.predict_proba(df[required_cols])[:, 1] * 100
                     df['Protest Risk (%)'] = predictions.round(1)
 
-                    st.success(f"Processed {len(df)} records")
                     st.subheader("Highest Risk Municipalities")
-                    st.dataframe(
-                        df.sort_values('Protest Risk (%)', ascending=False).head(5)
-                    )
+                    top_risks = df.sort_values('Protest Risk (%)', ascending=False).head(5)
+                    st.dataframe(top_risks) 
 
                     csv = df.to_csv(index=False)
                     st.download_button(
