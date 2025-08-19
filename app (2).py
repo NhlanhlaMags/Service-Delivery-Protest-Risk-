@@ -6,7 +6,7 @@ import os
 from pathlib import Path # Import Path
 from sklearn.utils import _set_output
 import sys
-import sklearn  # Ensure sklearn is imported before patching
+import sklearn  # Ensure sklearn is imported before patching 
 
 # Sklearn version compatibility patch
 if 'sklearn.compose._column_transformer' in sys.modules:
