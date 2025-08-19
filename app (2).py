@@ -10,7 +10,7 @@ import sklearn  # Ensure sklearn is imported before patching
 
 # Sklearn version compatibility patch
 if 'sklearn.compose._column_transformer' in sys.modules:
-    mod = sys.modules['sklearn.compose._column_transformer']
+    mod = sys.modules['sklearn.compose._column_transformer'] 
     if not hasattr(mod, '_RemainderColsList'):
         class _RemainderColsList(list):
             pass
