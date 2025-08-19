@@ -253,9 +253,7 @@ with tab2:
                         "predictions.csv",
                         "text/csv"
                     )
-                
-finally:
-    st.error("Model could not be loaded. Please check the file path and try again.")
+               
 
 # Footer
 st.markdown("---")
