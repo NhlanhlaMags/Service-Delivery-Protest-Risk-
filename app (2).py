@@ -1,4 +1,4 @@
-import streamlit as st
+46import streamlit as st
 import joblib
 import pandas as pd
 from io import StringIO
@@ -189,12 +189,13 @@ if model_data is not None:
                     st.progress(int(risk_prob))
 
                 # Explanation
+            finally:
                 st.plotly_chart(explain_prediction(input_df), use_container_width=True)
 
             
 
         # Update this section in your batch processing tab
-except tab2:
+with tab2:
 st.subheader("Batch Prediction via CSV")
         
         required_cols = [
