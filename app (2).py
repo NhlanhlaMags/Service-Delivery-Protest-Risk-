@@ -197,7 +197,7 @@ if model_data is not None:
 
         # Update this section in your batch processing tab
 with tab2:
-st.subheader("Batch Prediction via CSV")
+with st.subheader("Batch Prediction via CSV")
         
         st.subheader("Batch Prediction via CSV")
         
