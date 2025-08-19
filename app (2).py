@@ -7,12 +7,16 @@ from io import StringIO
 import os
 from pathlib import Path # Import Path
 from sklearn.utils import _set_output
+import sys
+import sklearn  # Ensure sklearn is imported before patching
 
-# Load the model
-model = joblib.load("protest_risk_model.pkl")
-
-# Re-save with `compat_pickle` for backward compatibility
-joblib.dump(model, "protest_risk_model_compat.pkl", compat_pickle=True)
+# Sklearn version compatibility patch
+if 'sklearn.compose._column_transformer' in sys.modules:
+    mod = sys.modules['sklearn.compose._column_transformer']
+    if not hasattr(mod, '_RemainderColsList'):
+        class _RemainderColsList(list):
+            pass
+        mod._RemainderColsList = _RemainderColsList
 
 # Configuration
 st.set_page_config(
@@ -27,12 +31,30 @@ PROVINCES = [
     'Limpopo', 'Mpumalanga', 'North West', 'Northern Cape', 'Western Cape'
 ]
 
-
 @st.cache_resource
 def load_model():
-   model = joblib.load("protest_risk_model.pkl")
-# Re-save with `compat_pickle` for backward compatibility
-joblib.dump(model, "protest_risk_model_compat.pkl", compat_pickle=True)
+    try:
+        current_dir = Path(__file__).parent
+        model_path = current_dir / "protest_risk_model.pkl"  # Correct filename
+        
+        st.write(f"Loading model from: {model_path}")
+        st.write(f"File exists: {os.path.exists(model_path)}")
+        
+        if not model_path.exists():
+            st.error(f"❌ Model file not found at: {model_path}")
+            # List available files for debugging
+            st.write("Files in directory:", os.listdir(current_dir))
+            return None
+            
+        model = joblib.load(model_path)
+        st.success("✅ Model loaded successfully!")
+        return {"model": model, "preprocessor": None}
+        
+    except Exception as e:
+        st.error(f"Model loading failed: {str(e)}")
+        return None
+
+
 # Helper functions
 def validate_inputs(df):
     #Ensure data quality before prediction
