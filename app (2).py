@@ -1,4 +1,4 @@
-
+59
 
 import streamlit as st
 import joblib
@@ -199,8 +199,28 @@ if model_data is not None:
 with tab2:
 st.subheader("Batch Prediction via CSV")
         
-        # ... (template download and uploader remain unchanged)
+        st.subheader("Batch Prediction via CSV")
         
+        # Define required columns
+        required_cols = [
+            'Province name', 'District municipality name', 
+            'District/Local municipality name', 'Total Population',
+            'Black African', 'Coloured', 'Indian/Asian', 'White',
+            'Informal Dwelling', 'Piped (tap) water on community stand',
+            'No access to piped (tap) water', 'Pit toilet', 'Bucket toilet'
+        ]
+        
+        # Sample template
+        sample_template = pd.DataFrame(columns=required_cols)
+        st.download_button(
+            "Download CSV Template",
+            sample_template.to_csv(index=False),
+            "template.csv",
+            "text/csv"
+        )
+
+        uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+
         if uploaded_file:
             try:
                 df = pd.read_csv(uploaded_file)
@@ -211,39 +231,38 @@ st.subheader("Batch Prediction via CSV")
 
                 # Column name mapping
                 column_mapping = {
-                    'Total Population': 'Total',
-                    'Population': 'Total',
+                    'Total': 'Total Population',
+                    'Population': 'Total Population',
                     'Province': 'Province name',
                     'District': 'District municipality name',
+                    'Local': 'District/Local municipality name',
                 }
                 df = df.rename(columns={k: v for k, v in column_mapping.items() 
                                         if k in df.columns})
 
                 # Check for required columns
-                required_cols = ['Province name', 'District municipality name', 
-                                'District/Local municipality name', 'Total']
                 missing_cols = [col for col in required_cols if col not in df.columns]
                 
                 if missing_cols:
                     st.error(f"Missing required columns: {missing_cols}")
                 else:
-                    # Select only required columns for prediction
-                    df_processed = df[required_cols]
-                    
                     # Make predictions
-                    predictions = model.predict_proba(df_processed)[:, 1] * 100
+                    predictions = model.predict_proba(df[required_cols])[:, 1] * 100
                     df['Protest Risk (%)'] = predictions.round(1)
 
                     st.success(f"Processed {len(df)} records")
                     st.subheader("Highest Risk Municipalities")
                     st.dataframe(
                         df.sort_values('Protest Risk (%)', ascending=False).head(5)
-                    
+                    )
+
                     # Download results
                     csv = df.to_csv(index=False)
                     st.download_button(
-                        "Download Predictions", csv,
-                        "predictions.csv", "text/csv"
+                        "Download Predictions",
+                        csv,
+                        "predictions.csv",
+                        "text/csv"
                     )
                     
             except Exception as e:
