@@ -1,5 +1,3 @@
-59
-
 import streamlit as st
 import joblib
 import pandas as pd
@@ -260,10 +258,8 @@ with st.subheader("Batch Prediction via CSV")
                         csv,
                         "predictions.csv",
                         "text/csv"
-                    )
-                    
-            except Exception as e:
-                st.error(f"Error processing file: {str(e)}")
+                        
+                        except Exception as e: st.error(f"Error processing file: {str(e)}")
 else:
     st.error("Model could not be loaded. Please check the file path and try again.")
 
