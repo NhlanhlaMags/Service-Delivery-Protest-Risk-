@@ -198,10 +198,7 @@ if model_data is not None:
         # Update this section in your batch processing tab
 with tab2:
 with st.subheader("Batch Prediction via CSV")
-        
-        st.subheader("Batch Prediction via CSV")
-        
-        # Define required columns
+ # Define required columns
         required_cols = [
             'Province name', 'District municipality name', 
             'District/Local municipality name', 'Total Population',
