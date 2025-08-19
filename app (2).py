@@ -198,7 +198,7 @@ if model_data is not None:
         # sample_template = pd.DataFrame(columns=model_data['preprocessor'].feature_names_in_) # Use this if preprocessor is in model_data
         sample_template = pd.DataFrame(columns=[
             'Province name', 'District municipality name', 'District/Local municipality name',
-            'Total', 'Black African', 'Coloured', 'Indian/Asian', 'White',
+            'Total Population', 'Black African', 'Coloured', 'Indian/Asian', 'White',
             'Informal Dwelling', 'Piped (tap) water on community stand',
             'No access to piped (tap) water', 'Pit toilet', 'Bucket toilet'
             # Add other relevant columns expected by the model
