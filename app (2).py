@@ -17,7 +17,7 @@ if 'sklearn.compose._column_transformer' in sys.modules:
         mod._RemainderColsList = _RemainderColsList
 
 # Configuration
-st.set_page_config(
+st.set_page_config( 
     page_title="Municipal Protest Risk Dashboard",
     page_icon="⚠️",
     layout="wide"
