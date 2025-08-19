@@ -254,9 +254,10 @@ with tab2:
                         "text/csv"
                     )
                     
-            except Exception as e:
+            else:
+                Exception as e:
                 st.error(f"Error processing file: {str(e)}")
-else:
+except:
     st.error("Model could not be loaded. Please check the file path and try again.")
 
 # Footer
