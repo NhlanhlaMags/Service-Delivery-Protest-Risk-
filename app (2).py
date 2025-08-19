@@ -4,7 +4,13 @@ import pandas as pd
 import os
 from pathlib import Path
 import sys
-import plotly.express as pximport sklearn if 'sklearn.compose._column_transformer' in sys.modules: mod = sys.modules['sklearn.compose._column_transformer'] if not hasattr(mod, '_RemainderColsList'): class _RemainderColsList(list): pass mod._RemainderColsList = _RemainderColsList
+import plotly.express as pximport sklearn
+if 'sklearn.compose._column_transformer' in sys.modules:
+        mod = sys.modules['sklearn.compose._column_transformer'] 
+        if not hasattr(mod, '_RemainderColsList'):
+               class _RemainderColsList(list): 
+                       pass 
+                mod._RemainderColsList = _RemainderColsList
 
 st.set_page_config( page_title="Municipal Protest Risk Dashboard", page_icon="⚠️", layout="wide" )
 
