@@ -111,7 +111,7 @@ if model_data is not None:
             st.subheader("Population Demographics")
             demo_cols = st.columns(5)
             with demo_cols[0]:
-                total population = st.number_input("Total Population", min_value=0, value=100000)
+                total_population = st.number_input("Total Population", min_value=0, value=100000)
             with demo_cols[1]:
                 black = st.number_input("Black African", min_value=0, value=80000)
             with demo_cols[2]:
@@ -143,7 +143,7 @@ if model_data is not None:
                 'District/Local municipality name': local_muni,
                 'Local municipality code': 0,  # Placeholder
                 'ID': 0,  # Placeholder
-                'Total Population' : total population, 
+                'Total Population' : total_population, 
                 'Black African': black,
                 'Coloured': coloured,
                 'Indian/Asian': indian,
