@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import sys
 import plotly.express as px
-
 import sklearn
 if 'sklearn.compose._column_transformer' in sys.modules:
         mod = sys.modules['sklearn.compose._column_transformer']
