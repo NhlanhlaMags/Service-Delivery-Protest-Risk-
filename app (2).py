@@ -256,6 +256,7 @@ with tab2:
                
 
 # Footer
+finally:
 st.markdown("---")
 st.caption('''
 Protest Risk Prediction Model v1.0
