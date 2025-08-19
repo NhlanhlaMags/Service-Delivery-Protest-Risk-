@@ -1,165 +1,292 @@
-import streamlit as st 
+
+
+import streamlit as st
 import joblib
 import pandas as pd
+from io import StringIO
 import os
-from pathlib import Path
+from pathlib import Path # Import Path
+from sklearn.utils import _set_output
 import sys
-import plotly.express as px
+import sklearn  # Ensure sklearn is imported before patching
 
-import sklearn
+# Sklearn version compatibility patch
 if 'sklearn.compose._column_transformer' in sys.modules:
-        mod = sys.modules['sklearn.compose._column_transformer'] 
-        if not hasattr(mod, '_RemainderColsList'):
-               class _RemainderColsList(list): 
-                       pass 
-                mod._RemainderColsList = _RemainderColsList
+    mod = sys.modules['sklearn.compose._column_transformer']
+    if not hasattr(mod, '_RemainderColsList'):
+        class _RemainderColsList(list):
+            pass
+        mod._RemainderColsList = _RemainderColsList
 
-st.set_page_config( page_title="Municipal Protest Risk Dashboard", page_icon="⚠️", layout="wide" )
-
---- Constants ---
-
-PROVINCES = [ 'Eastern Cape', 'Free State', 'Gauteng', 'KwaZulu-Natal', 'Limpopo', 'Mpumalanga', 'North West', 'Northern Cape', 'Western Cape' ]
-
---- Load Model ---
-
-@st.cache_resource def load_model(): try: current_dir = Path(file).parent model_path = current_dir / "protest_risk_model.pkl"
-
-if not model_path.exists():
-        st.error(f"❌ Model file not found at: {model_path}")
-        return None
-
-    model = joblib.load(model_path)
-    st.success("✅ Model loaded successfully!")
-    return model
-except Exception as e:
-    st.error(f"Model loading failed: {str(e)}")
-    return None
-
---- Input Validation ---
-
-def validate_inputs(df): if 'Province name' in df.columns: df['Province name'] = df['Province name'].str.strip().str.title() df['Province name'] = df['Province name'].apply( lambda x: x if x in PROVINCES else 'Unknown' ) num_cols = df.select_dtypes(include=['number']).columns df[num_cols] = df[num_cols].clip(lower=0) return df
-
---- Feature Importance ---
-
-def get_top_features(model, feature_names, top_n=5): if hasattr(model, "feature_importances_"): importances = model.feature_importances_ importance_df = pd.DataFrame({ "Feature": feature_names, "Importance": importances }).sort_values("Importance", ascending=False).head(top_n)
-
-fig = px.bar(
-        importance_df.sort_values("Importance"),
-        x="Importance", y="Feature", orientation="h",
-        title=f"Top {top_n} Features Contributing to Risk"
-    )
-    return fig
-else:
-    st.warning("Model does not support feature importance.")
-    return None
-
---- App Layout ---
-
-st.title("🇿🇦 South African Municipal Protest Risk Predictor") st.markdown("This tool assesses protest risk probability based on municipal characteristics.")
-
-model = load_model()
-
-if model is not None: # === Single Prediction Section === st.header("Single Municipality Prediction")
-
-with st.form("single_prediction"):
-    cols = st.columns(3)
-    province = cols[0].selectbox("Province", PROVINCES)
-    district = cols[1].text_input("District Municipality")
-    local_muni = cols[2].text_input("Local Municipality")
-
-    st.subheader("Population Demographics")
-    demo_cols = st.columns(5)
-    total_population = demo_cols[0].number_input("Total Population", min_value=0, value=100000)
-    black = demo_cols[1].number_input("Black African", min_value=0, value=80000)
-    coloured = demo_cols[2].number_input("Coloured", min_value=0, value=10000)
-    indian = demo_cols[3].number_input("Indian/Asian", min_value=0, value=5000)
-    white = demo_cols[4].number_input("White", min_value=0, value=5000)
-
-    st.subheader("Living Conditions")
-    hs_cols = st.columns([2,1,1,1,1])
-    informal = hs_cols[0].number_input("Informal Dwellings", min_value=0, value=5000)
-    piped_water = hs_cols[1].number_input("Piped Water Access", min_value=0, value=70000)
-    no_water = hs_cols[2].number_input("No Water Access", min_value=0, value=10000)
-    pit_toilet = hs_cols[3].number_input("Pit Toilets", min_value=0, value=20000)
-    bucket_toilet = hs_cols[4].number_input("Bucket Toilets", min_value=0, value=1000)
-
-    submitted = st.form_submit_button("Predict Risk")
-
-if submitted:
-    input_data = {
-        'Province name': province,
-        'District municipality name': district,
-        'District/Local municipality name': local_muni,
-        'Local municipality code': 0,
-        'ID': 0,
-        'Total Population': total_population,
-        'Black African': black,
-        'Coloured': coloured,
-        'Indian/Asian': indian,
-        'White': white,
-        'Informal Dwelling': informal,
-        'Piped (tap) water on community stand': piped_water,
-        'No access to piped (tap) water': no_water,
-        'Pit toilet': pit_toilet,
-        'Bucket toilet': bucket_toilet,
-    }
-    input_df = pd.DataFrame([input_data])
-    input_df = validate_inputs(input_df)
-
-    risk_prob = model.predict_proba(input_df)[0][1] * 100
-    st.success(f"Predicted Protest Risk: {risk_prob:.1f}%")
-
-    col1, col2 = st.columns(2)
-    col1.metric("Risk Level", "High" if risk_prob > 70 else "Medium" if risk_prob > 40 else "Low")
-    col2.progress(int(risk_prob))
-
-    fig = get_top_features(model, input_df.columns)
-    if fig:
-        st.plotly_chart(fig, use_container_width=True)
-
-# === Batch Prediction Section ===
-st.header("Batch Prediction via CSV")
-
-sample_template = pd.DataFrame(columns=[
-    'Province name', 'District municipality name', 'District/Local municipality name',
-    'Total Population', 'Black African', 'Coloured', 'Indian/Asian', 'White',
-    'Informal Dwelling', 'Piped (tap) water on community stand',
-    'No access to piped (tap) water', 'Pit toilet', 'Bucket toilet'
-])
-
-st.download_button(
-    "Download CSV Template",
-    sample_template.to_csv(index=False),
-    "template.csv", "text/csv"
+# Configuration
+st.set_page_config(
+    page_title="Municipal Protest Risk Dashboard",
+    page_icon="⚠️",
+    layout="wide"
 )
 
-uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+# Constants
+PROVINCES = [
+    'Eastern Cape', 'Free State', 'Gauteng', 'KwaZulu-Natal',
+    'Limpopo', 'Mpumalanga', 'North West', 'Northern Cape', 'Western Cape'
+]
 
-if uploaded_file:
+@st.cache_resource
+def load_model():
     try:
-        df = pd.read_csv(uploaded_file)
-        df = validate_inputs(df)
-
-        missing_cols = [col for col in sample_template.columns if col not in df.columns]
-        if missing_cols:
-            st.error(f"Missing required columns: {missing_cols}")
-        else:
-            predictions = model.predict_proba(df[sample_template.columns])[:, 1] * 100
-            df['Protest Risk (%)'] = predictions.round(1)
-            st.success(f"Processed {len(df)} records")
-
-            st.subheader("Highest Risk Municipalities")
-            st.dataframe(df.sort_values('Protest Risk (%)', ascending=False).head(5))
-
-            csv = df.to_csv(index=False)
-            st.download_button("Download Predictions", csv, "predictions.csv", "text/csv")
-
+        current_dir = Path(__file__).parent
+        model_path = current_dir / "protest_risk_model.pkl"  # Correct filename
+        
+        st.write(f"Loading model from: {model_path}")
+        st.write(f"File exists: {os.path.exists(model_path)}")
+        
+        if not model_path.exists():
+            st.error(f"❌ Model file not found at: {model_path}")
+            # List available files for debugging
+            st.write("Files in directory:", os.listdir(current_dir))
+            return None
+            
+        model = joblib.load(model_path)
+        st.success("✅ Model loaded successfully!")
+        return {"model": model, "preprocessor": None}
+        
     except Exception as e:
-        st.error(f"Error processing file: {str(e)}")
+        st.error(f"Model loading failed: {str(e)}")
+        return None
 
-else: st.error("Model could not be loaded. Please check the file path and try again.")
 
-Footer
+# Helper functions
+def validate_inputs(df):
+    #Ensure data quality before prediction
+    # Convert province names
+    if 'Province name' in df.columns:
+        df['Province name'] = df['Province name'].str.strip().str.title()
+        df['Province name'] = df['Province name'].apply(
+            lambda x: x if x in PROVINCES else 'Unknown'
+        )
 
-st.markdown("---") st.caption("Protest Risk Prediction Model
+    # Ensure numerical fields are valid
+    num_cols = df.select_dtypes(include=['number']).columns
+    df[num_cols] = df[num_cols].clip(lower=0)
+    return df # Return the modified dataframe
+
+def explain_prediction(input_df):
+    # Placeholder for SHAP explanation.
+    # SHAP requires the model and potentially a background dataset.
+    # This function needs to be properly implemented once the model and preprocessor are loaded and available.
+    # For now, returning a placeholder plot.
+    st.warning("SHAP explanation is a placeholder and needs proper implementation.")
+    fig = px.bar(x=[1, 2, 3], y=['Feature A', 'Feature B', 'Feature C'], orientation='h', title="Feature Importance (Placeholder)")
+    return fig
+
+
+# App layout
+st.title("🇿🇦 South African Municipal Protest Risk Predictor")
+st.markdown('''
+This tool assesses protest risk probability based on municipal characteristics.
+''')
+
+tab1, tab2 = st.tabs(["Single Municipality", "Batch Processing"])
+
+model_data = load_model() # Load the model and preprocessor once
+
+if model_data is not None:
+    model = model_data['model']
+    # Assuming the model object itself contains the preprocessor or feature names are known
+    # If the model is a pipeline, access the preprocessor step
+    # preprocessor = model.named_steps['preprocessor'] # Example if using a pipeline
+
+tab1, tab2 = st.tabs(["Single Municipality", "Batch Processing"])
+model_data = load_model()
+
+if model_data is not None:
+    model = model_data['model']
+    
+    with tab1:
+        with st.form("single_prediction"):
+            st.subheader("Municipal Characteristics")
+
+            cols = st.columns(3)
+            with cols[0]:
+                province = st.selectbox("Province", PROVINCES)
+            with cols[1]:
+                district = st.text_input("District Municipality")
+            with cols[2]:
+                local_muni = st.text_input("Local Municipality")
+
+            st.subheader("Population Demographics")
+            demo_cols = st.columns(5)
+            with demo_cols[0]:
+                total_population = st.number_input("Total Population", min_value=0, value=100000)
+            with demo_cols[1]:
+                black = st.number_input("Black African", min_value=0, value=80000)
+            with demo_cols[2]:
+                coloured = st.number_input("Coloured", min_value=0, value=10000)
+            with demo_cols[3]:
+                indian = st.number_input("Indian/Asian", min_value=0, value=5000)
+            with demo_cols[4]:
+                white = st.number_input("White", min_value=0, value=5000)
+
+            st.subheader("Living Conditions")
+            hs_cols = st.columns([2,1,1,1,1])
+            with hs_cols[0]:
+                informal = st.number_input("Informal Dwellings", min_value=0, value=5000)
+            with hs_cols[1]:
+                piped_water = st.number_input("Piped Water Access", min_value=0, value=70000)
+            with hs_cols[2]:
+                no_water = st.number_input("No Water Access", min_value=0, value=10000)
+            with hs_cols[3]:
+                pit_toilet = st.number_input("Pit Toilets", min_value=0, value=20000)
+            with hs_cols[4]:
+                bucket_toilet = st.number_input("Bucket Toilets", min_value=0, value=1000)
+
+            submitted = st.form_submit_button("Predict Risk")
+
+        if submitted:
+            input_data = {
+                'Province name': province,
+                'District municipality name': district,
+                'District/Local municipality name': local_muni,
+                'Local municipality code': 0,  # Placeholder
+                'ID': 0,  # Placeholder
+                'Total Population' : total_population, 
+                'Black African': black,
+                'Coloured': coloured,
+                'Indian/Asian': indian,
+                'White': white,
+                'Informal Dwelling': informal,
+                'Piped (tap) water on community stand': piped_water,
+                'No access to piped (tap) water': no_water,
+                'Pit toilet': pit_toilet,
+                'Bucket toilet': bucket_toilet,
+                'Communal refuse dump': 0,  # Defaults
+                'Communal container/central collection point': 0,
+                'Own refuse dump': 0,
+                'Dump or leave rubbish anywhere (no rubbish disposal)': 0,
+                'Gas': 0,
+                'Paraffin': 0,
+                'Candles': 0,
+                'Paraffin_8': 0,
+                'Wood': 0,
+                'Coal': 0,
+                'Animal dung': 0
+            }
+
+            input_df = pd.DataFrame([input_data])
+            input_df = validate_inputs(input_df)
+
+            try:
+                # Access the model from the loaded dictionary for prediction
+                risk_prob = model.predict_proba(input_df)[0][1] * 100
+
+                st.success(f"Predicted Protest Risk: {risk_prob:.1f}%")
+
+                # Visual indicators
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Risk Level",
+                             "High" if risk_prob > 70 else
+                             "Medium" if risk_prob > 40 else "Low")
+                with col2:
+                    st.progress(int(risk_prob))
+
+                # Explanation
+                st.plotly_chart(explain_prediction(input_df), use_container_width=True)
+
+            
+
+        # Update this section in your batch processing tab
+with tab2:
+    st.subheader("Batch Prediction via CSV")
+    
+    # Define required columns with possible variations
+    required_columns = {
+        'Total': ['Total', 'total', 'TOTAL', 'Population'],
+        'Province name': ['Province name', 'Province', 'PROVINCE'],
+        # Add other columns with possible variations
+    }
+    
+    # Sample template with exact column names
+    sample_template = pd.DataFrame(columns=[
+        'Province name', 'District municipality name', 
+        'District/Local municipality name', 'Total', 
+        'Black African', 'Coloured', 'Indian/Asian', 'White',
+        'Informal Dwelling', 'Piped (tap) water on community stand',
+        'No access to piped (tap) water', 'Pit toilet', 'Bucket toilet'
+    ])
+
+    st.download_button(
+        "Download CSV Template",
+        sample_template.to_csv(index=False),
+        "template.csv",
+        "text/csv"
+    )
+
+    uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+
+    if uploaded_file:
+        try:
+            df = pd.read_csv(uploaded_file)
+            df = validate_inputs(df)
+
+            # Normalize column names
+            df.columns = df.columns.str.strip().str.title()
+
+            # Column name mapping
+            column_mapping = {
+                'Total Population': 'Total',
+                'Population': 'Total',
+                'Province': 'Province name',
+                'District': 'District municipality name',
+                # Add other mappings as needed
+            }
+            df = df.rename(columns=column_mapping)
+
+            # Check for required columns
+            missing_cols = [col for col in sample_template.columns if col not in df.columns]
+            
+            if missing_cols:
+                st.error(f"Missing required columns: {missing_cols}")
+                st.info("Please include these columns in your CSV file")
+            else:
+                # Select and order columns according to the model's expectation
+                df_processed = df[sample_template.columns]
+                
+                # Access the model for prediction
+                predictions = model.predict_proba(df_processed)[:, 1] * 100
+                df['Protest Risk (%)'] = predictions.round(1)
+
+                st.success(f"Processed {len(df)} records")
+
+                # Show top 5 risk areas
+                st.subheader("Highest Risk Municipalities")
+                st.dataframe(
+                    df.sort_values('Protest Risk (%)', ascending=False)
+                    .head(5)
+                )
+
+                # Download results
+                csv = df.to_csv(index=False)
+                st.download_button(
+                    "Download Predictions",
+                    csv,
+                    "predictions.csv",
+                    "text/csv"
+                )
+
+        except Exception as e:
+            st.error(f"Error processing file: {str(e)}")
+
+            except Exception as e:
+                st.error(f"Error processing file: {str(e)}")
+else:
+    st.error("Model could not be loaded. Please check the file path and try again.")
+
+
+# Footer
+st.markdown("---")
+st.caption('''
+Protest Risk Prediction Model v1.0
+Data sources: Census, Municipal Reports
+''')
 
