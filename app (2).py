@@ -194,7 +194,7 @@ if model_data is not None:
             
 
         # Update this section in your batch processing tab
-finally tab2:
+except tab2:
 st.subheader("Batch Prediction via CSV")
         
         required_cols = [
