@@ -1,4 +1,4 @@
-import streamlit as st
+Eimport streamlit as st
 import joblib
 import pandas as pd
 from io import StringIO
@@ -196,7 +196,7 @@ if model_data is not None:
 
         # Update this section in your batch processing tab
 with tab2:
-  with st.subheader("Batch Prediction via CSV")
+  with st.subheader("Batch Prediction via CSV"):
         
         required_cols = [
             'Province name', 'District municipality name', 
