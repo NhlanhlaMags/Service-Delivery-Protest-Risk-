@@ -187,70 +187,89 @@ if model_data is not None:
                 # Explanation
                 st.plotly_chart(explain_prediction(input_df), use_container_width=True)
 
-            except Exception as e:
-                st.error(f"Prediction failed: {str(e)}")
+            
 
-    with tab2:
-        st.subheader("Batch Prediction via CSV")
+        # Update this section in your batch processing tab
+with tab2:
+    st.subheader("Batch Prediction via CSV")
+    
+    # Define required columns with possible variations
+    required_columns = {
+        'Total': ['Total', 'total', 'TOTAL', 'Population'],
+        'Province name': ['Province name', 'Province', 'PROVINCE'],
+        # Add other columns with possible variations
+    }
+    
+    # Sample template with exact column names
+    sample_template = pd.DataFrame(columns=[
+        'Province name', 'District municipality name', 
+        'District/Local municipality name', 'Total', 
+        'Black African', 'Coloured', 'Indian/Asian', 'White',
+        'Informal Dwelling', 'Piped (tap) water on community stand',
+        'No access to piped (tap) water', 'Pit toilet', 'Bucket toilet'
+    ])
 
-        # Access the feature names - This part still needs the preprocessor or knowledge of expected features
-        # For now, providing a generic template
-        # sample_template = pd.DataFrame(columns=model_data['preprocessor'].feature_names_in_) # Use this if preprocessor is in model_data
-        sample_template = pd.DataFrame(columns=[
-            'Province name', 'District municipality name', 'District/Local municipality name',
-            'Total Population', 'Black African', 'Coloured', 'Indian/Asian', 'White',
-            'Informal Dwelling', 'Piped (tap) water on community stand',
-            'No access to piped (tap) water', 'Pit toilet', 'Bucket toilet'
-            # Add other relevant columns expected by the model
-        ])
+    st.download_button(
+        "Download CSV Template",
+        sample_template.to_csv(index=False),
+        "template.csv",
+        "text/csv"
+    )
 
-        st.download_button(
-            "Download CSV Template",
-            sample_template.to_csv(index=False),
-            "template.csv",
-            "text/csv"
-        )
+    uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 
-        uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+    if uploaded_file:
+        try:
+            df = pd.read_csv(uploaded_file)
+            df = validate_inputs(df)
 
-        if uploaded_file:
-            try:
-                df = pd.read_csv(uploaded_file)
-                df = validate_inputs(df)
+            # Normalize column names
+            df.columns = df.columns.str.strip().str.title()
 
-                # Ensure required columns are present before prediction
-                required_cols = sample_template.columns.tolist() # Use the columns from the template as required
-                missing_cols = set(required_cols) - set(df.columns)
-                if missing_cols:
-                    st.error(f"Missing required columns: {list(missing_cols)}")
-                else:
-                    # Select and order columns according to the model's expectation
-                    df_processed = df[required_cols] # Select required columns
+            # Column name mapping
+            column_mapping = {
+                'Total Population': 'Total',
+                'Population': 'Total',
+                'Province': 'Province name',
+                'District': 'District municipality name',
+                # Add other mappings as needed
+            }
+            df = df.rename(columns=column_mapping)
 
-                    # Access the model for prediction
-                    predictions = model.predict_proba(df_processed)[:, 1] * 100
-                    df['Protest Risk (%)'] = predictions.round(1)
+            # Check for required columns
+            missing_cols = [col for col in sample_template.columns if col not in df.columns]
+            
+            if missing_cols:
+                st.error(f"Missing required columns: {missing_cols}")
+                st.info("Please include these columns in your CSV file")
+            else:
+                # Select and order columns according to the model's expectation
+                df_processed = df[sample_template.columns]
+                
+                # Access the model for prediction
+                predictions = model.predict_proba(df_processed)[:, 1] * 100
+                df['Protest Risk (%)'] = predictions.round(1)
 
-                    st.success(f"Processed {len(df)} records")
+                st.success(f"Processed {len(df)} records")
 
-                    # Show top 5 risk areas
-                    st.dataframe(
-                        df.sort_values('Protest Risk (%)', ascending=False)
-                        .head(5)
-                        .style.background_gradient(
-                            cmap='Reds',
-                            subset=['Protest Risk (%)']
-                        )
-                    )
+                # Show top 5 risk areas
+                st.subheader("Highest Risk Municipalities")
+                st.dataframe(
+                    df.sort_values('Protest Risk (%)', ascending=False)
+                    .head(5)
+                )
 
-                    # Download results
-                    csv = df.to_csv(index=False)
-                    st.download_button(
-                        "Download Predictions",
-                        csv,
-                        "predictions.csv",
-                        "text/csv"
-                    )
+                # Download results
+                csv = df.to_csv(index=False)
+                st.download_button(
+                    "Download Predictions",
+                    csv,
+                    "predictions.csv",
+                    "text/csv"
+                )
+
+        except Exception as e:
+            st.error(f"Error processing file: {str(e)}")
 
             except Exception as e:
                 st.error(f"Error processing file: {str(e)}")
