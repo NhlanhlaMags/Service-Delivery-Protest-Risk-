@@ -255,7 +255,7 @@ with tab2:
                     ) 
             except Exception as e:
                 st.error(f"Error processing file: {str(e)}")
-finally
+except:
     print(error("Model could not be loaded. Please check the file path and try again.")) 
 
                
