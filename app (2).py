@@ -252,9 +252,8 @@ with tab2:
                         csv,
                         "predictions.csv",
                         "text/csv"
-                    )
-            except :
-                Exception as e:
+                    ) 
+            except Exception as e:
                 st.error(f"Error processing file: {str(e)}")
 finally:
     st.error("Model could not be loaded. Please check the file path and try again.")
