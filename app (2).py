@@ -143,7 +143,7 @@ if model_data is not None:
                 'District/Local municipality name': local_muni,
                 'Local municipality code': 0,  # Placeholder
                 'ID': 0,  # Placeholder
-                'Total : total, 
+                'Total' : total, 
                 'Black African': black,
                 'Coloured': coloured,
                 'Indian/Asian': indian,
