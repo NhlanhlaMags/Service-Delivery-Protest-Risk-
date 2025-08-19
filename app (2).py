@@ -195,8 +195,8 @@ if model_data is not None:
 
         # Update this section in your batch processing tab
 with tab2:
-with st.subheader("Batch Prediction via CSV")
- # Define required columns
+st.subheader("Batch Prediction via CSV")
+        
         required_cols = [
             'Province name', 'District municipality name', 
             'District/Local municipality name', 'Total Population',
@@ -205,7 +205,6 @@ with st.subheader("Batch Prediction via CSV")
             'No access to piped (tap) water', 'Pit toilet', 'Bucket toilet'
         ]
         
-        # Sample template
         sample_template = pd.DataFrame(columns=required_cols)
         st.download_button(
             "Download CSV Template",
@@ -220,11 +219,8 @@ with st.subheader("Batch Prediction via CSV")
             try:
                 df = pd.read_csv(uploaded_file)
                 df = validate_inputs(df)
-
-                # Normalize column names
                 df.columns = df.columns.str.strip().str.title()
 
-                # Column name mapping
                 column_mapping = {
                     'Total': 'Total Population',
                     'Population': 'Total Population',
@@ -232,16 +228,16 @@ with st.subheader("Batch Prediction via CSV")
                     'District': 'District municipality name',
                     'Local': 'District/Local municipality name',
                 }
-                df = df.rename(columns={k: v for k, v in column_mapping.items() 
-                                        if k in df.columns})
+                
+                for alt_name, correct_name in column_mapping.items():
+                    if alt_name in df.columns and correct_name not in df.columns:
+                        df.rename(columns={alt_name: correct_name}, inplace=True)
 
-                # Check for required columns
                 missing_cols = [col for col in required_cols if col not in df.columns]
                 
                 if missing_cols:
                     st.error(f"Missing required columns: {missing_cols}")
                 else:
-                    # Make predictions
                     predictions = model.predict_proba(df[required_cols])[:, 1] * 100
                     df['Protest Risk (%)'] = predictions.round(1)
 
@@ -251,18 +247,18 @@ with st.subheader("Batch Prediction via CSV")
                         df.sort_values('Protest Risk (%)', ascending=False).head(5)
                     )
 
-                    # Download results
                     csv = df.to_csv(index=False)
                     st.download_button(
                         "Download Predictions",
                         csv,
                         "predictions.csv",
                         "text/csv"
-                        
-                        except Exception as e: st.error(f"Error processing file: {str(e)}")
+                    )
+                    
+            except Exception as e:
+                st.error(f"Error processing file: {str(e)}")
 else:
     st.error("Model could not be loaded. Please check the file path and try again.")
-
 
 # Footer
 st.markdown("---")
