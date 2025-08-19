@@ -96,6 +96,12 @@ if model_data is not None:
     # If the model is a pipeline, access the preprocessor step
     # preprocessor = model.named_steps['preprocessor'] # Example if using a pipeline
 
+tab1, tab2 = st.tabs(["Single Municipality", "Batch Processing"])
+model_data = load_model()
+
+if model_data is not None:
+    model = model_data['model']
+    
     with tab1:
         with st.form("single_prediction"):
             st.subheader("Municipal Characteristics")
